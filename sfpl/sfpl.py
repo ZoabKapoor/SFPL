@@ -211,8 +211,7 @@ class Account(User):
         resp = self.session.get(
             'https://sfpl.bibliocommons.com/holds/index/not_yet_available')
 
-        if resp.history:
-            raise exceptions.NotLoggedIn
+        self.validate(resp)
 
         holds = BeautifulSoup(resp.text, 'lxml')
 
@@ -250,8 +249,7 @@ class Account(User):
         resp = self.session.get(
             'https://sfpl.bibliocommons.com/checkedout')
 
-        if resp.history:
-            raise exceptions.NotLoggedIn
+        self.validate(resp)
 
         checkouts = BeautifulSoup(resp.text, 'lxml')
 
@@ -330,8 +328,7 @@ class Account(User):
         resp = self.session.get(
             'https://sfpl.bibliocommons.com/checkedout')
 
-        if resp.history:
-            raise exceptions.NotLoggedIn
+        self.validate(resp)
 
         return self.parseCheckouts(BeautifulSoup(resp.text, 'lxml'))
 
@@ -344,8 +341,7 @@ class Account(User):
         resp = self.session.get(
             'https://sfpl.bibliocommons.com/holds/index/not_yet_available')
 
-        if resp.history:
-            raise exceptions.NotLoggedIn
+        self.validate(resp)
 
         return self.parseHolds(BeautifulSoup(resp.text, 'lxml'))
 
@@ -385,8 +381,14 @@ class Account(User):
                                    '_id': int(''.join(s for s in book.find(testid='bib_link')['href'] if s.isdigit()))}, status=status))
         return book_data
 
-    def loggedIn(self):
-        return not bool(self.session.get('https://sfpl.bibliocommons.com/user_dashboard').history)
+    def validate(self, response: requests.Response):
+        """Validates a response by checking if its status code is in the 2xx range
+
+        Args:
+            response (json): The HTTP response.
+        """
+        response.raise_for_status()
+
 
     def logout(self):
         """Logs out of the account."""
